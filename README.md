@@ -35,16 +35,20 @@ $ roslaunch file_player file_player.launch
 ```
 - Then, you need to select a sequence directory via GUI.
 - For the correct load, first you need to place the GPS, IMU, LiDAR, and radar files in a directory following this structure (see this [guide video](https://youtu.be/uU-FC-GmHXA?t=45)) 
-- IMU and GPS files (.csv) must be located at the same directory of "data_stamp.csv"
+- IMU and GPS files (.csv) must be located at the same directory of "datastamp.csv"
 
 ## 4. Load Data Files and Play
 Here's a step-by-step guide:
 
-Click the 'Load' button.
-Navigate and select the desired dataset folder.
-Hit the player button to commence publishing data as ROS messages.
-Use the 'Stop skip' button to skip intervals when the vehicle remains stationary. This feature enhances the user experience by focusing on significant data.
-The loop button ensures that the data resumes playback from the beginning once completed
+1. Click the 'Load' button.
+
+2. Navigate and select the desired dataset folder.
+
+3. Hit the player button to commence publishing data as ROS messages.
+
+4. Use the 'Stop skip' button to skip intervals when the vehicle remains stationary. This feature enhances the user experience by focusing on significant data.
+
+5. The loop button ensures that the data resumes playback from the beginning once completed
 
 
 
