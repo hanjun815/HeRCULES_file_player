@@ -41,13 +41,9 @@ $ roslaunch file_player file_player.launch
 Here's a step-by-step guide:
 
 1. Click the 'Load' button.
-
 2. Navigate and select the desired dataset folder.
-
 3. Hit the player button to commence publishing data as ROS messages.
-
 4. Use the 'Stop skip' button to skip intervals when the vehicle remains stationary. This feature enhances the user experience by focusing on significant data.
-
 5. The loop button ensures that the data resumes playback from the beginning once completed
 
 
