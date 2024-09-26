@@ -9,6 +9,15 @@ Maintainer: Hanjun Kim (hanjun815@snu.ac.kr)
 ## What is File player?
 This program is a file player for the complex urban data set. If a user installs the ROS using "Desktop-Full version", there is only one additional dependent package, except for the ROS default package. First, clone this package into the src folder of your desired ROS workspace.
 
+## Pre-requisites
+Before utilizing the file player, it's crucial to have both the novatel-gps-msgs and livox custom messages. Ensure you install these drivers:
+
+Novatel GPS Driver Installation:
+Replace 'version' with your appropriate ROS version (e.g., melodic, noetic).
+```
+$ sudo apt-get install ros-'version'-novatel-gps-driver
+```
+
 ## How to install
 ```
 $ mkdir -p catkin_ws/src
