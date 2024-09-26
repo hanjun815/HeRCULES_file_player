@@ -1,42 +1,50 @@
 # File player for HeRCULES dataset
 
 ## News
-- March 2025: Our dataset is now available via [this google-site (https://sites.google.com/view/herculesdataset)](https://sites.google.com/view/herculesdataset).
+- March 2025: Our dataset is now available via [HeRCULES dataset](https://sites.google.com/view/herculesdataset).
 
 ## What is File player?
 This program is a file player for the complex urban data set. If a user installs the ROS using "Desktop-Full version", there is only one additional dependent package, except for the ROS default package. First, clone this package into the src folder of your desired ROS workspace.
 
 Maintainer: Hanjun Kim (hanjun815@snu.ac.kr)
 
-## How to use?
+## NEWS
+### Update (2023. 08. 11): ros noetic compatability 
+- We now support compiling in the ros noetic environment. Instructions for installing from noetic can be found in the section below. 
+  
+### Update (2021. 08. 03): rosbag generation 
+- We now support to generate a rosbag from the files. This is a contribution from [Daniel Adolfsson](https://github.com/dan11003) and we are very grateful for his efforts (for the details: see [The pull requests from @dan11003](https://github.com/irapkaist/file_player_mulran/pull/7))
+- Use the 'Save bag' button. <p align="center"><img src="doc/file_player.png" width=500></p>
+- Note
+  - Currently only Radar files are saved into a rosbag with ground-truth trajectory (not body frame, but UTM coordinate) as Odometry topic. Later, we plan to support lidar, imu, and gps topics as well as the radar files in a single rosbag.
 
-### 1. Obtain dependent package (defined msg)
+
+### Update (2020. 11. 19): IMU and GPS are available 
+- We released IMU and GPS data (consumer-level), as well as the originally delivered LiDAR and radar data. 
+  - The model specification and the extrinsic calibration (i.e., the sensor position within our car platform) is equivalent to our lab's other dataset ([Complex Urban Dataset, IJRR 19](https://irap.kaist.ac.kr/dataset/)), so please refer the paper. 
+- We expect these data supports [GPS-aided radar researches](https://arxiv.org/pdf/2006.02108.pdf), LiDAR-IMU fusion such as [LIO-SAM](https://github.com/TixiaoShan/LIO-SAM) ([example video](https://youtu.be/Y6DXlC34qlc?t=479)), or radar-imu fusion.
+
+## How to install
+```
+$ mkdir -p catkin_ws/src
+$ cd catkin_ws/src
+$ git clone -b [master, noetic] https://github.com/irapkaist/file_player_mulran.git
+$ cd ../..
+$ catkin_make
+```
+- If ROS version is melodic, please use a master branch. Ohteriwse, if ROS version is noetic, please use a noetic branch.
+
+## How to use 
 
 ```
-$cd ~/catkin_ws/src
-$wstool init
-$wstool merge file_player/depend_pack.rosinstall
-$wstool update
+$ source devel/setup.bash
+$ roslaunch file_player file_player.launch
 ```
+- Then, you need to select a sequence directory via GUI.
+- For the correct load, first you need to place the GPS, IMU, LiDAR, and radar files in a directory following this structure (see this [guide video](https://youtu.be/uU-FC-GmHXA?t=45)) 
+- IMU and GPS files (.csv) must be located at the same directory of "data_stamp.csv"
 
-### 2. Build workspace
 
-```
-$cd ~/catkin_ws
-$catkin_make
-```
-
-### 3. Run file player
-
-```
-$source devel/setup.bash
-$roslaunch file_player file_player.launch
-```
-
-### 4. Load data files and play
-
-1. Click 'Load' button.
-2. Choose data set folder including sensor_data folder and calibration folder.
-3. The player button starts publishing data in the ROS message.
-4. The Stop skip button skips data while the vehicle is stationary for convenience.
-5. The loop button resumes when playback is finished.
+## Contributors
+- Jinyong Jeong: The original author
+- Minwoo Jung: made the player system compatible with LIO-SAM input (i.e., supports ring information of a lidar scan)
