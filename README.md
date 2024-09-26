@@ -47,4 +47,8 @@ Here's a step-by-step guide:
 5. The loop button ensures that the data resumes playback from the beginning once completed
 
 
+## Contributors
+- Jinyong Jeong: The original author
+- Minwoo Jung: made the player system compatible with LIO-SAM input (i.e., supports ring information of a lidar scan)
+
 
