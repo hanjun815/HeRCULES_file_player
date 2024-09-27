@@ -4,7 +4,7 @@ Maintainer: Hanjun Kim (hanjun815@snu.ac.kr)
 
 
 ## News
-- March 2025: Our dataset is now available via [HeRCULES dataset](https://sites.google.com/view/herculesdataset).
+- March 2025: Our dataset will be available via [To be updated](https://sites.google.com/view/hercules_dataset).
 
 ## What is File player?
 This program is a file player for the complex urban data set. If a user installs the ROS using "Desktop-Full version", there is only one additional dependent package, except for the ROS default package. First, clone this package into the src folder of your desired ROS workspace.
