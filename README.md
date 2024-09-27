@@ -46,6 +46,8 @@ Here's a step-by-step guide:
 4. Use the 'Stop skip' button to skip intervals when the vehicle remains stationary. This feature enhances the user experience by focusing on significant data.
 5. The loop button ensures that the data resumes playback from the beginning once completed
 
+## Radar Development Tools
+- Our Radar development tools are available via [Polar2X](https://github.com/hanjun815/Polar2X).
 
 ## Contributors
 - Jinyong Jeong: The original author
