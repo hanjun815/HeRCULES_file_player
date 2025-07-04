@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[])
 {
-  ros::init(argc, argv, "file_player");
+  ros::init(argc, argv, "hercules_file_player");
   ros::NodeHandle nh;
 
   QApplication a(argc, argv);

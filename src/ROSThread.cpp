@@ -82,8 +82,8 @@ void ROSThread::ros_initialize(ros::NodeHandle &n)
   pre_timer_stamp_ = ros::Time::now().toNSec();
   timer_ = nh_.createTimer(ros::Duration(0.0001), boost::bind(&ROSThread::TimerCallback, this, _1));
 
-  start_sub_  = nh_.subscribe<std_msgs::Bool>("/file_player_start", 1, boost::bind(&ROSThread::FilePlayerStart, this, _1));
-  stop_sub_    = nh_.subscribe<std_msgs::Bool>("/file_player_stop", 1, boost::bind(&ROSThread::FilePlayerStop, this, _1));
+  start_sub_  = nh_.subscribe<std_msgs::Bool>("/hercules_file_player_start", 1, boost::bind(&ROSThread::FilePlayerStart, this, _1));
+  stop_sub_    = nh_.subscribe<std_msgs::Bool>("/hercules_file_player_stop", 1, boost::bind(&ROSThread::FilePlayerStop, this, _1));
 
   gps_pub_ = nh_.advertise<sensor_msgs::NavSatFix>("/gps/fix", 1000);
   inspva_pub_ = nh_.advertise<novatel_gps_msgs::Inspva>("/inspva", 1000);

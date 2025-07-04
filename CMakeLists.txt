@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(file_player)
+project(hercules_file_player)
 
 add_definitions(-std=c++14)
 
@@ -47,14 +47,14 @@ generate_messages(
 )
 
 generate_dynamic_reconfigure_options(
-  cfg/file_player.cfg
+  cfg/hercules_file_player.cfg
   #...
 )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES 
-    file_player
+    hercules_file_player
   CATKIN_DEPENDS 
     roscpp rospy 
     std_msgs 
@@ -76,10 +76,10 @@ catkin_package(
 
 set (SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-set (File_Player_QTLib_src ${SRC_DIR}/mainwindow.cpp ${SRC_DIR}/ROSThread.cpp)
-set (File_Player_QTLib_hdr ${SRC_DIR}/mainwindow.h ${SRC_DIR}/ROSThread.h)
-set (File_Player_QTLib_ui  ${SRC_DIR}/mainwindow.ui)
-set (File_Player_QTBin_src ${SRC_DIR}/main.cpp)
+set (hercules_file_player_QTLib_src ${SRC_DIR}/mainwindow.cpp ${SRC_DIR}/ROSThread.cpp)
+set (hercules_file_player_QTLib_hdr ${SRC_DIR}/mainwindow.h ${SRC_DIR}/ROSThread.h)
+set (hercules_file_player_QTLib_ui  ${SRC_DIR}/mainwindow.ui)
+set (hercules_file_player_QTBin_src ${SRC_DIR}/main.cpp)
 
 
 
@@ -89,7 +89,7 @@ set (File_Player_QTBin_src ${SRC_DIR}/main.cpp)
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${file_player_INCLUDE_DIRS}
+  ${hercules_file_player_INCLUDE_DIRS}
   ${SRC_DIR}
   ${Qt5Widgets_INCLUDE_DIRS}
   ${PROJECT_BINARY_DIR}
@@ -98,8 +98,8 @@ include_directories(
 )
 
 
-#qt5_wrap_cpp(File_Player_QTLib_hdr_moc ${File_Player_QTLib_hdr})
-qt5_wrap_ui (File_Player_QTLib_ui_moc  ${File_Player_QTLib_ui})
+#qt5_wrap_cpp(hercules_file_player_QTLib_hdr_moc ${hercules_file_player_QTLib_hdr})
+qt5_wrap_ui (hercules_file_player_QTLib_ui_moc  ${hercules_file_player_QTLib_ui})
 qt5_add_resources(SHADER_RSC_ADDED ${SRC_DIR}/resources.qrc)
 
 
@@ -109,12 +109,12 @@ qt5_add_resources(SHADER_RSC_ADDED ${SRC_DIR}/resources.qrc)
 ###########
 
 
-add_executable(file_player ${File_Player_QTLib_src} ${File_Player_QTLib_hdr} ${File_Player_QTBin_src} ${SHADER_RSC_ADDED} ${File_Player_QTLib_ui_moc})     
+add_executable(hercules_file_player ${hercules_file_player_QTLib_src} ${hercules_file_player_QTLib_hdr} ${hercules_file_player_QTBin_src} ${SHADER_RSC_ADDED} ${hercules_file_player_QTLib_ui_moc})     
 
-add_dependencies(file_player file_player_msgs_generate_messages_cpp ${PROJECT_NAME}_gencfg)
-add_dependencies(file_player ${catkin_EXPORTED_TARGETS})
+add_dependencies(hercules_file_player hercules_file_player_msgs_generate_messages_cpp ${PROJECT_NAME}_gencfg)
+add_dependencies(hercules_file_player ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(file_player
+target_link_libraries(hercules_file_player
 
   ${catkin_LIBRARIES}
   ${QT_LIBRARIES} 

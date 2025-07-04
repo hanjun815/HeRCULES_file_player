@@ -50,7 +50,7 @@
 
 
 #include <dynamic_reconfigure/server.h>
-#include <file_player/dynamic_file_playerConfig.h>
+#include <hercules_file_player/dynamic_hercules_file_playerConfig.h>
 #include <Eigen/Dense>
 #include <thread>
 #include <mutex>
@@ -61,10 +61,10 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include "file_player/color.h"
+#include "hercules_file_player/color.h"
 #include "rosbag/bag.h"
 #include <ros/transport_hints.h>
-#include "file_player/datathread.h"
+#include "hercules_file_player/datathread.h"
 #include <sys/types.h>
 
 #include <algorithm>

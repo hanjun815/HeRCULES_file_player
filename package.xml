@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>file_player</name>
+  <name>hercules_file_player</name>
   <version>0.0.0</version>
-  <description>file player</description>
+  <description>hercules file player</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
