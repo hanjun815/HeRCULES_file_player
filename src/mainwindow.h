@@ -11,13 +11,14 @@
 #include <QProcess>
 #include <QThread>
 #include "ROSThread.h"
-#include <std_srvs/SetBool.h>
+#include "std_srvs/srv/set_bool.hpp"
 #include <QErrorMessage>
 #include <QCloseEvent>
 #include <QInputDialog>
 #include <signal.h>
 #include <algorithm>
-#include <rosbag/bag.h>
+#include <rosbag2_cpp/writer.hpp>
+#include <rosbag2_cpp/writers/sequential_writer.hpp>
 #include <dirent.h>
 #include <ctime>
 #include <chrono>
@@ -46,12 +47,13 @@ public:
 
   explicit MainWindow(QWidget *parent = 0);
   ~MainWindow();
-  void RosInit(ros::NodeHandle &n);
+  void RosInit(std::shared_ptr<rclcpp::Node> node);
 
 private slots:
   void TryClose();
   void FilePathSet();
   void Play();
+  void Save();
   void Pause();
   void PlaySpeedChange(double value);
   void LoopFlagChange(int value);
@@ -71,6 +73,7 @@ private:
   QString data_folder_path_;
   bool play_flag_;
   bool pause_flag_;
+  bool save_flag_;
   bool loop_flag_;
   bool stop_skip_flag_;
   int slider_value_;

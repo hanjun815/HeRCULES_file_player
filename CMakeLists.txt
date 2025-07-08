@@ -1,131 +1,102 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(hercules_file_player)
 
-add_definitions(-std=c++14)
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
 
-if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE release)
-endif ()
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-find_package(catkin REQUIRED cmake_modules
-  COMPONENTS
-  roscpp
-  rospy
-  std_msgs
-  geometry_msgs
-  message_generation
-  rosbag
-  image_transport
-  cv_bridge
-  dynamic_reconfigure
-  pcl_ros
-  pcl_conversions
-  pcl_msgs
-  camera_info_manager
-  tf
-)
-set(CMAKE_AUTOMOC ON)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
-find_package(Eigen REQUIRED)
-
-set (CMAKE_PREFIX_PATH /opt/Qt5.6.1/5.6/gcc_64/lib/cmake)
-
-#find_package(Qt5Core)
-find_package(Qt5Widgets)
-find_package(Qt5Gui)
-find_package(Qt5OpenGL)
-
-
-add_message_files(
-  DIRECTORY msg
-)
-
-generate_messages(
-   DEPENDENCIES
-    std_msgs
-    geometry_msgs
-)
-
-generate_dynamic_reconfigure_options(
-  cfg/hercules_file_player.cfg
-  #...
-)
-
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES 
-    hercules_file_player
-  CATKIN_DEPENDS 
-    roscpp rospy 
-    std_msgs 
-    geometry_msgs 
-    message_runtime 
-    image_transport 
-    cv_bridge 
-    dynamic_reconfigure 
-    pcl_ros
-    pcl_conversions  
-    pcl_msgs
-    camera_info_manager
-    tf
-
-  DEPENDS 
-    Eigen
-)
-
-
-set (SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-set (hercules_file_player_QTLib_src ${SRC_DIR}/mainwindow.cpp ${SRC_DIR}/ROSThread.cpp)
-set (hercules_file_player_QTLib_hdr ${SRC_DIR}/mainwindow.h ${SRC_DIR}/ROSThread.h)
-set (hercules_file_player_QTLib_ui  ${SRC_DIR}/mainwindow.ui)
-set (hercules_file_player_QTBin_src ${SRC_DIR}/main.cpp)
-
-
-
-#find_package(GLEW REQUIRED)
-#find_package(GLUT REQUIRED)
-
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(rosbag2_cpp REQUIRED)
+find_package(rosgraph_msgs REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(PCL REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Gui OpenGL)
+find_package(tf2 REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(novatel_gps_msgs REQUIRED)
 
 include_directories(
-  ${catkin_INCLUDE_DIRS}
-  ${hercules_file_player_INCLUDE_DIRS}
-  ${SRC_DIR}
-  ${Qt5Widgets_INCLUDE_DIRS}
-  ${PROJECT_BINARY_DIR}
   include
-  ${Eigen_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${PCL_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
+  ${Qt5Widgets_INCLUDE_DIRS}
+  ${cv_bridge_INCLUDE_DIRS}
 )
 
+set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(FILE_PLAYER_QTLib_src ${SRC_DIR}/mainwindow.cpp ${SRC_DIR}/ROSThread.cpp)
+set(FILE_PLAYER_QTLib_hdr ${SRC_DIR}/mainwindow.h ${SRC_DIR}/ROSThread.h)
+set(FILE_PLAYER_QTLib_ui ${SRC_DIR}/mainwindow.ui)
+set(FILE_PLAYER_QTBin_src ${SRC_DIR}/main.cpp)
 
-#qt5_wrap_cpp(hercules_file_player_QTLib_hdr_moc ${hercules_file_player_QTLib_hdr})
-qt5_wrap_ui (hercules_file_player_QTLib_ui_moc  ${hercules_file_player_QTLib_ui})
+qt5_wrap_ui(FILE_PLAYER_QTLib_ui_moc ${FILE_PLAYER_QTLib_ui})
+qt5_wrap_cpp(FILE_PLAYER_QTLib_hdr_moc ${FILE_PLAYER_QTLib_hdr})
 qt5_add_resources(SHADER_RSC_ADDED ${SRC_DIR}/resources.qrc)
 
+add_executable(hercules_file_player ${FILE_PLAYER_QTLib_src} ${FILE_PLAYER_QTLib_hdr} ${FILE_PLAYER_QTBin_src} ${SHADER_RSC_ADDED} ${FILE_PLAYER_QTLib_ui_moc} ${FILE_PLAYER_QTLib_hdr_moc})
 
-
-###########
-## Build ##
-###########
-
-
-add_executable(hercules_file_player ${hercules_file_player_QTLib_src} ${hercules_file_player_QTLib_hdr} ${hercules_file_player_QTBin_src} ${SHADER_RSC_ADDED} ${hercules_file_player_QTLib_ui_moc})     
-
-add_dependencies(hercules_file_player hercules_file_player_msgs_generate_messages_cpp ${PROJECT_NAME}_gencfg)
-add_dependencies(hercules_file_player ${catkin_EXPORTED_TARGETS})
+ament_target_dependencies(hercules_file_player
+  rclcpp
+  rclcpp_components
+  std_msgs
+  nav_msgs
+  sensor_msgs
+  geometry_msgs
+  image_transport
+  cv_bridge
+  PCL
+  pcl_conversions
+  tf2
+  Eigen3
+  std_srvs
+  rosbag2_cpp
+  rosgraph_msgs
+  novatel_gps_msgs
+)
 
 target_link_libraries(hercules_file_player
-
-  ${catkin_LIBRARIES}
-  ${QT_LIBRARIES} 
-  ${OPENGL_LIBRARIES}
-  Qt5::Widgets 
-  Qt5::Gui 
+  Qt5::Widgets
+  Qt5::Gui
   Qt5::OpenGL
   GL
-  ${BOOST_CUSTOM_LIBS}
-  ${Eigen_LIBRARIES}
+  ${rclcpp_LIBRARIES}
+  ${cv_bridge_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ${EIGEN3_LIBRARIES}
 )
+
+install(TARGETS hercules_file_player
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY msg/
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+ament_package()
 
 
 

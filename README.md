@@ -74,4 +74,82 @@ Here's a step-by-step guide:
 - Jinyong Jeong: The original author
 - Minwoo Jung: made the player system compatible with LIO-SAM input (i.e., supports ring information of a lidar scan)
 
+## 5. ROS2 Usage
+
+### Prerequisites
+- ROS2 (tested on Humble/Iron; Desktop-Full recommended)
+- Install required dependencies:
+  - `novatel_gps_msgs`, `pcl_conversions`, `tf2`, `tf2_eigen`, `std_srvs`, etc. (use `rosdep` to install dependencies)
+  - Example:
+    ```
+    rosdep install --from-paths src --ignore-src -r -y
+    ```
+
+### Build Instructions
+```
+$ mkdir -p ~/ros2_ws/src
+$ cd ~/ros2_ws/src
+$ git clone https://github.com/hanjun815/HeRCULES_file_player.git
+$ cd ~/ros2_ws
+$ rosdep install --from-paths src --ignore-src -r -y
+$ colcon build --symlink-install
+$ source install/setup.bash
+```
+
+### How to Launch the File Player (ROS2)
+```
+$ ros2 launch hercules_file_player hercules_file_player.launch.py
+```
+- You can enable/disable specific topics using launch arguments, e.g.:
+  ```
+  $ ros2 launch hercules_file_player hercules_file_player.launch.py enable_aeva:=true enable_stereo:=false
+  ```
+- The GUI will appear for sequence selection as in ROS1.
+
+### Notes
+- The ROS2 version does not require rosbag or dynamic_reconfigure.
+- All topic publishers are managed via launch parameters.
+- If you encounter missing plugin errors in RViz, ensure you do not have broken/unused plugins installed.
+- For rqt and RViz2, use the standard ROS2 tools (`rqt`, `rviz2`).
+
+### Prepare the data and timestamps
+
+If your data directory is represented as follows, you are now ready to enjoy the HeliPR dataset!
+```
+📂 Sequence_name/
+├── 📂 LiDAR/
+│   └── 📂 Aeva/
+│       └── 📝 timestamp.bin
+│── 📂 Radar/
+│   │── 📂 continental/
+│   │   └── 📝 timestamp.bin
+│   │── 📂 continentalobject/
+│   │   └── 📝 timestamp.bin
+│   └── 📂 cart/
+│       └── 📝 timestamp.bin
+│── 📂 .../
+└── 📂 sensor_data/
+       │── 📝 aeva_stamp.csv
+       │── 📝 continentalobject_stamp.csv
+       │── 📝 continental_stamp.csv
+       │── 📝 datastamp.csv     
+       │── 📝 gps.csv     
+       │── 📝 inspva.csv     
+       │── 📝 navtech_stamp.csv     
+       │── 📝 stereo_stamp.csv     
+       └── 📝 xsens_imu.csv     
+
+```
+
+### Load data files and play
+
+1. Click the "Load" button.
+2. Choose Sequence_name folder including sensor_data folder and data_stamp.csv.
+3. The "Play" button starts publishing data in the ROS message.
+4. The "Pause/Resume" button pauses and resumes publishing data.
+5. The "Save" button saves all topics into the rosbag file.
+6. The "Loop" checkbox resumes when playback is finished.
+
+Enjoy it:) 
+
 

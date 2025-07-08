@@ -9,11 +9,15 @@ MainWindow::MainWindow(QWidget *parent) :
 {
   my_ros_ = new ROSThread(this, &mutex);
   ui_->setupUi(this);
+  ui_->doubleSpinBox->setRange(0.01, 20.0);
+  ui_->doubleSpinBox->setValue(1.0);
+  ui_->doubleSpinBox->setSingleStep(0.01);
   my_ros_->start();
 
   slider_checker_ = false;
   play_flag_ = false;
   pause_flag_ = false;
+  save_flag_ = false;
   loop_flag_ = false;
   stop_skip_flag_ = true;
 
@@ -24,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui_->pushButton, SIGNAL(pressed()), this, SLOT(FilePathSet()));
   connect(ui_->pushButton_2, SIGNAL(pressed()), this, SLOT(Play()));
   connect(ui_->pushButton_3, SIGNAL(pressed()), this, SLOT(Pause()));
+  connect(ui_->pushButton_4, SIGNAL(pressed()), this, SLOT(Save()));
 
   connect(ui_->doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(PlaySpeedChange(double)));
   ui_->doubleSpinBox->setRange(0.01,20.0);
@@ -71,9 +76,9 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::RosInit(ros::NodeHandle &n)
+void MainWindow::RosInit(std::shared_ptr<rclcpp::Node> node)
 {
-  my_ros_->ros_initialize(n);
+  my_ros_->ros_initialize(node);
 }
 
 
@@ -92,6 +97,10 @@ void MainWindow::FilePathSet()
   pause_flag_ = false;
   my_ros_->pause_flag_ = false;
   this->ui_->pushButton_3->setText(QString::fromStdString("Pause"));
+
+  save_flag_ = false;
+  my_ros_->save_flag_ = false;
+  this->ui_->pushButton_4->setText(QString::fromStdString("Rosbag Save"));
 
   QFileDialog dialog;
   this->ui_->label->setText("Data is beging loaded.....");
@@ -176,6 +185,20 @@ void MainWindow::AutoStartFlagChange(int value)
     my_ros_->auto_start_flag_ = true;
   }else if(value == 0){
     my_ros_->auto_start_flag_ = false;
+  }
+}
+void MainWindow::Save()
+{
+  if(save_flag_ == false){
+    save_flag_ = true;
+    my_ros_->save_flag_ = true;
+    my_ros_->process_flag_ = false;
+    this->ui_->pushButton_4->setText(QString::fromStdString("Saving..."));
+  }else{
+    save_flag_ = false;
+    my_ros_->save_flag_ = false;
+    my_ros_->process_flag_ = true;
+    this->ui_->pushButton_4->setText(QString::fromStdString("Rosbag Save"));
   }
 }
 void MainWindow::SliderValueChange(int value)

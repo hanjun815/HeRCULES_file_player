@@ -75,43 +75,53 @@ ROSThread::~ROSThread()
 
 }
 
-void ROSThread::ros_initialize(ros::NodeHandle &n)
+void ROSThread::ros_initialize(std::shared_ptr<rclcpp::Node> node)
 {
-  nh_ = n;
+  node_ = node;
 
-  pre_timer_stamp_ = ros::Time::now().toNSec();
-  timer_ = nh_.createTimer(ros::Duration(0.0001), boost::bind(&ROSThread::TimerCallback, this, _1));
+  // Read topic enable parameters
+  enable_aeva_ = node_->declare_parameter("enable_aeva", true);
+  enable_continental_ = node_->declare_parameter("enable_continental", true);
+  enable_radarpolar_ = node_->declare_parameter("enable_radarpolar", true);
+  enable_stereo_right_ = node_->declare_parameter("enable_stereo_right", true);
+  enable_stereo_left_ = node_->declare_parameter("enable_stereo_left", true);
 
-  start_sub_  = nh_.subscribe<std_msgs::Bool>("/hercules_file_player_start", 1, boost::bind(&ROSThread::FilePlayerStart, this, _1));
-  stop_sub_    = nh_.subscribe<std_msgs::Bool>("/hercules_file_player_stop", 1, boost::bind(&ROSThread::FilePlayerStop, this, _1));
+  rclcpp::Time pre_time = rclcpp::Clock().now();
+  pre_timer_stamp_ = pre_time.nanoseconds();
+  timer_ = node_->create_wall_timer(std::chrono::nanoseconds(100), std::bind(&ROSThread::TimerCallback, this));
 
-  gps_pub_ = nh_.advertise<sensor_msgs::NavSatFix>("/gps/fix", 1000);
-  inspva_pub_ = nh_.advertise<novatel_gps_msgs::Inspva>("/inspva", 1000);
+  start_sub_ = node_->create_subscription<std_msgs::msg::Bool>(
+      "/hercules_file_player_start", 1, std::bind(&ROSThread::FilePlayerStart, this, std::placeholders::_1));
+  stop_sub_ = node_->create_subscription<std_msgs::msg::Bool>(
+      "/hercules_file_player_stop", 1, std::bind(&ROSThread::FilePlayerStop, this, std::placeholders::_1));
 
-  imu_pub_ = nh_.advertise<sensor_msgs::Imu>("/imu/data_raw", 1000);
-  magnet_pub_ = nh_.advertise<sensor_msgs::MagneticField>("/imu/mag", 1000);
+  gps_pub_ = node_->create_publisher<sensor_msgs::msg::NavSatFix>("/gps/fix", 1000);
+  inspva_pub_ = node_->create_publisher<novatel_gps_msgs::msg::Inspva>("/inspva", 1000);
 
-  aeva_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/aeva/points", 10000);
+  imu_pub_ = node_->create_publisher<sensor_msgs::msg::Imu>("/imu/data_raw", 1000);
+  magnet_pub_ = node_->create_publisher<sensor_msgs::msg::MagneticField>("/imu/mag", 1000);
 
-  continental_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/continental/points", 10000);
-  continentalobject_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/continentalobject/points", 10000);
+  aeva_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/aeva/points", 10000);
 
-  radarpolar_pub_ = nh_.advertise<sensor_msgs::Image>("/radar/polar", 10); // giseop
+  continental_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/continental/points", 10000);
+  continentalobject_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/continentalobject/points", 10000);
 
-  stereo_left_pub_ = nh_.advertise<sensor_msgs::Image>("/stereo/left/image_raw", 10);
-  stereo_right_pub_ = nh_.advertise<sensor_msgs::Image>("/stereo/right/image_raw", 10);
+  radarpolar_pub_ = node_->create_publisher<sensor_msgs::msg::Image>("/radar/polar", 10); // giseop
+
+  stereo_left_pub_ = node_->create_publisher<sensor_msgs::msg::Image>("/stereo/left/image_raw", 10);
+  stereo_right_pub_ = node_->create_publisher<sensor_msgs::msg::Image>("/stereo/right/image_raw", 10);
   
   // stereo_left_info_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("/stereo/left/camera_info", 10);
   // stereo_right_info_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("/stereo/right/camera_info", 10);
  
-  clock_pub_ = nh_.advertise<rosgraph_msgs::Clock>("/clock", 1);
+  clock_pub_ = node_->create_publisher<rosgraph_msgs::msg::Clock>("/clock", 1);
 }
 
 void ROSThread::run()
 {
-  ros::AsyncSpinner spinner(0);
-  spinner.start();
-  ros::waitForShutdown();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(node_);
+  executor.spin();
 }
 
 void ROSThread::Ready()
@@ -183,14 +193,14 @@ void ROSThread::Ready()
   fp = fopen((data_folder_path_+"/sensor_data/gps.csv").c_str(),"r");
   double latitude, longitude, altitude, altitude_orthometric;
   double cov[9];
-  sensor_msgs::NavSatFix gps_data;
+  sensor_msgs::msg::NavSatFix gps_data;
   gps_data_.clear();
   while( fscanf(fp,"%ld,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
                 &stamp,&latitude,&longitude,&altitude,&cov[0],&cov[1],&cov[2],&cov[3],&cov[4],&cov[5],&cov[6],&cov[7],&cov[8])
          == 13
          )
   {
-    gps_data.header.stamp.fromNSec(stamp);
+    gps_data.header.stamp = rclcpp::Time(stamp);
     gps_data.header.frame_id = "gps";
     gps_data.latitude = latitude;
     gps_data.longitude = longitude;
@@ -212,12 +222,12 @@ void ROSThread::Ready()
   // string status;
   char status[17];
   int status_value;
-  novatel_gps_msgs::Inspva inspva_data;
+  novatel_gps_msgs::msg::Inspva inspva_data;
   inspva_data_.clear();
   while(fscanf(fp,"%ld,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%s %d",&stamp,&latitude,&longitude,&height,&north_velocity,&east_velocity,&up_velocity,&roll,&pitch,&azimuth,status, &status_value) == 12){
   //17%19[^\n] %29[^\n]
     
-    inspva_data.header.stamp.fromNSec(stamp);
+    inspva_data.header.stamp = rclcpp::Time(stamp);
     inspva_data.header.frame_id = "inspva";
     inspva_data.latitude = latitude;
     inspva_data.longitude = longitude;
@@ -237,8 +247,8 @@ void ROSThread::Ready()
   //Read IMU data
   fp = fopen((data_folder_path_+"/sensor_data/xsens_imu.csv").c_str(),"r");
   double q_x,q_y,q_z,q_w,x,y,z,g_x,g_y,g_z,a_x,a_y,a_z,m_x,m_y,m_z;
-  sensor_msgs::Imu imu_data;
-  sensor_msgs::MagneticField mag_data;
+  sensor_msgs::msg::Imu imu_data;
+  sensor_msgs::msg::MagneticField mag_data;
   imu_data_.clear();
   mag_data_.clear();
 
@@ -246,7 +256,7 @@ void ROSThread::Ready()
     int length = fscanf(fp,"%ld,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",&stamp,&q_x,&q_y,&q_z,&q_w,&x,&y,&z,&g_x,&g_y,&g_z,&a_x,&a_y,&a_z,&m_x,&m_y,&m_z);
     if(length != 8 && length != 17) break;
     if(length == 8){
-      imu_data.header.stamp.fromNSec(stamp);
+      imu_data.header.stamp = rclcpp::Time(stamp);
       imu_data.header.frame_id = "imu";
       imu_data.orientation.x = q_x;
       imu_data.orientation.y = q_y;
@@ -257,7 +267,7 @@ void ROSThread::Ready()
       imu_data_version_ = 1;
 
     }else if(length == 17){
-      imu_data.header.stamp.fromNSec(stamp);
+      imu_data.header.stamp = rclcpp::Time(stamp);
       imu_data.header.frame_id = "imu";
       imu_data.orientation.x = q_x;
       imu_data.orientation.y = q_y;
@@ -282,7 +292,7 @@ void ROSThread::Ready()
 
 
       imu_data_[stamp] = imu_data;
-      mag_data.header.stamp.fromNSec(stamp);
+      mag_data.header.stamp = rclcpp::Time(stamp);
       mag_data.header.frame_id = "imu";
       mag_data.magnetic_field.x = m_x;
       mag_data.magnetic_field.y = m_y;
@@ -302,13 +312,16 @@ void ROSThread::Ready()
   stereo_left_file_list_.clear();
 
   // GetDirList(data_folder_path_ + "/image/stereo_left",stereo_file_list_);
-  GetDirList(data_folder_path_ + "/LiDAR/Aeva",aeva_file_list_);
-  GetDirList(data_folder_path_ + "/Radar/Continental",continental_file_list_);
-  GetDirList(data_folder_path_ + "/Radar/Continentalobject",continentalobject_file_list_);
-  GetDirList(data_folder_path_ + "/Radar/Navtech", radarpolar_file_list_);
-  GetDirList(data_folder_path_ + "/Image/stereo_right", stereo_right_file_list_);
-  GetDirList(data_folder_path_ + "/Image/stereo_left", stereo_left_file_list_);
-
+  if(enable_aeva_){GetDirList(data_folder_path_ + "/LiDAR/Aeva",aeva_file_list_);}
+  if(enable_continental_)
+  {
+    GetDirList(data_folder_path_ + "/Radar/Continental",continental_file_list_);
+    GetDirList(data_folder_path_ + "/Radar/Continentalobject",continentalobject_file_list_);
+  }
+  if(enable_radarpolar_){GetDirList(data_folder_path_ + "/Radar/Navtech", radarpolar_file_list_);}
+  if(enable_stereo_right_){GetDirList(data_folder_path_ + "/Image/stereo_right", stereo_right_file_list_);}
+  if(enable_stereo_left_){GetDirList(data_folder_path_ + "/Image/stereo_left", stereo_left_file_list_);}
+  
   //load camera info
 
   // left_camera_nh_ = ros::NodeHandle(nh_,"left");
@@ -351,12 +364,32 @@ void ROSThread::Ready()
   gps_thread_.thread_ = std::thread(&ROSThread::GpsThread,this);
   inspva_thread_.thread_ = std::thread(&ROSThread::InspvaThread,this);
   imu_thread_.thread_ = std::thread(&ROSThread::ImuThread,this);
-  aeva_thread_.thread_ = std::thread(&ROSThread::AevaThread,this);
-  continental_thread_.thread_ = std::thread(&ROSThread::ContinentalThread,this);
-  continentalobject_thread_.thread_ = std::thread(&ROSThread::ContinentalobjectThread,this);
-  radarpolar_thread_.thread_ = std::thread(&ROSThread::RadarpolarThread,this);
-  stereo_right_thread_.thread_ = std::thread(&ROSThread::StereorightThread,this);
-  stereo_left_thread_.thread_ = std::thread(&ROSThread::StereoleftThread,this);
+  // Only activate and start threads if enabled
+  if (enable_aeva_) {
+    aeva_thread_.thread_ = std::thread(&ROSThread::AevaThread, this);
+  } else {
+    aeva_thread_.active_ = false;
+  }
+  if (enable_continental_) {
+    continental_thread_.thread_ = std::thread(&ROSThread::ContinentalThread, this);
+  } else {
+    continental_thread_.active_ = false;
+  }
+  if (enable_radarpolar_) {
+    radarpolar_thread_.thread_ = std::thread(&ROSThread::RadarpolarThread, this);
+  } else {
+    radarpolar_thread_.active_ = false;
+  }
+  if (enable_stereo_right_) {
+    stereo_right_thread_.thread_ = std::thread(&ROSThread::StereorightThread, this);
+  } else {
+    stereo_right_thread_.active_ = false;
+  }
+  if (enable_stereo_left_) {
+    stereo_left_thread_.thread_ = std::thread(&ROSThread::StereoleftThread, this);
+  } else {
+    stereo_left_thread_.active_ = false;
+  }
 }
 
 void ROSThread::DataStampThread()
@@ -445,9 +478,9 @@ void ROSThread::DataStampThread()
     }
 
     if(prev_clock_stamp_ == 0 || (stamp - prev_clock_stamp_) > 10000000){
-        rosgraph_msgs::Clock clock;
-        clock.clock.fromNSec(stamp);
-        clock_pub_.publish(clock);
+        rosgraph_msgs::msg::Clock clock;
+        clock.clock = rclcpp::Time(stamp);
+        clock_pub_->publish(clock);
         prev_clock_stamp_ = stamp;
     }
 
@@ -466,7 +499,13 @@ void ROSThread::DataStampThread()
         }
     }
     if(save_flag_ == true && process_flag_ == false){
-      bag_.open(data_folder_path_ + "/" + to_string(bag_idx_) + ".bag", rosbag::bagmode::Write);
+      rosbag2_storage::StorageOptions storage_options;
+      storage_options.uri = data_folder_path_ + "/" + to_string(bag_idx_) + ".bag";
+      storage_options.storage_id = "sqlite3";
+      rosbag2_cpp::ConverterOptions converter_options;
+      converter_options.input_serialization_format = "cdr";
+      converter_options.output_serialization_format = "cdr";
+      bag_.open(storage_options, converter_options);
       process_flag_ = true;
     }
     else if(save_flag_ == false && process_flag_ == true){
@@ -491,7 +530,7 @@ void ROSThread::GpsThread()
       auto data = gps_thread_.pop();
       //process
       if(gps_data_.find(data) != gps_data_.end()){
-        gps_pub_.publish(gps_data_[data]);
+        gps_pub_->publish(gps_data_[data]);
       }
     }
     if(gps_thread_.active_ == false) return;
@@ -511,9 +550,9 @@ void ROSThread::InspvaThread()
       if(inspva_data_.find(data) != inspva_data_.end()){
         if(save_flag_ == true && process_flag_ == true){
           std::lock_guard<std::mutex> lock(bag_mutex_);
-          bag_.write("/inspva", inspva_data_[data].header.stamp, inspva_data_[data]);
+          bag_.write(inspva_data_[data], "/inspva", rclcpp::Time(inspva_data_[data].header.stamp));
         }
-        inspva_pub_.publish(inspva_data_[data]);
+        inspva_pub_->publish(inspva_data_[data]);
       }
 
     }
@@ -534,9 +573,9 @@ void ROSThread::ImuThread()
       if(imu_data_.find(data) != imu_data_.end()){
         if(save_flag_ == true && process_flag_ == true){
           std::lock_guard<std::mutex> lock(bag_mutex_);
-          bag_.write("/imu/data_raw", imu_data_[data].header.stamp, imu_data_[data]);
+          bag_.write(imu_data_[data], "/imu/data_raw", rclcpp::Time(imu_data_[data].header.stamp));
         }
-        imu_pub_.publish(imu_data_[data]);
+        imu_pub_->publish(imu_data_[data]);
       }
 
     }
@@ -544,9 +583,9 @@ void ROSThread::ImuThread()
   }
 }
 
-void ROSThread::TimerCallback(const ros::TimerEvent&)
+void ROSThread::TimerCallback()
 {
-    int64_t current_stamp = ros::Time::now().toNSec();
+    int64_t current_stamp = rclcpp::Clock().now().nanoseconds();
     if(play_flag_ == true && pause_flag_ == false){
       processed_stamp_ += static_cast<int64_t>(static_cast<double>(current_stamp - pre_timer_stamp_) * play_rate_);
     }
@@ -575,19 +614,19 @@ std::cout.precision(20);
       //publish data
       if(to_string(data) + ".bin" == aeva_next_.first){
         //publish
-        aeva_next_.second.header.stamp.fromNSec(data) ;
+        aeva_next_.second.header.stamp = rclcpp::Time(data);
         aeva_next_.second.header.frame_id = "aeva";
         if(save_flag_ == true && process_flag_ == true){
           std::lock_guard<std::mutex> lock(bag_mutex_);
-          bag_.write("/aeva/points", aeva_next_.second.header.stamp, aeva_next_.second);
+          bag_.write(aeva_next_.second, "/aeva/points", rclcpp::Time(aeva_next_.second.header.stamp));
         }
-        aeva_pub_.publish(aeva_next_.second);
+        aeva_pub_->publish(aeva_next_.second);
 
       }else{
         //load current data
         pcl::PointCloud<pc_type_a> cloud;
         cloud.clear();
-        sensor_msgs::PointCloud2 publish_cloud;
+        sensor_msgs::msg::PointCloud2 publish_cloud;
         string current_file_name = data_folder_path_ + "/LiDAR/Aeva" +"/"+ to_string(data) + ".bin";
         if(find(next(aeva_file_list_.begin(),max(0,previous_file_index-search_bound_)),aeva_file_list_.end(),to_string(data)+".bin") != aeva_file_list_.end()){
             ifstream file;
@@ -608,9 +647,9 @@ std::cout.precision(20);
             file.close();
 
             pcl::toROSMsg(cloud, publish_cloud);
-            publish_cloud.header.stamp.fromNSec(data); 
+            publish_cloud.header.stamp = rclcpp::Time(data); 
             publish_cloud.header.frame_id = "aeva";          
-            aeva_pub_.publish(publish_cloud);
+            aeva_pub_->publish(publish_cloud);
 
         }
         previous_file_index = 0;
@@ -619,7 +658,7 @@ std::cout.precision(20);
       //load next data
       pcl::PointCloud<pc_type_a> cloud;
       cloud.clear();
-      sensor_msgs::PointCloud2 publish_cloud;
+      sensor_msgs::msg::PointCloud2 publish_cloud;
       current_file_index = find(next(aeva_file_list_.begin(),max(0,previous_file_index-search_bound_)),aeva_file_list_.end(),to_string(data)+".bin") - aeva_file_list_.begin();
       if(find(next(aeva_file_list_.begin(),max(0,previous_file_index-search_bound_)),aeva_file_list_.end(),aeva_file_list_[current_file_index+1]) != aeva_file_list_.end()){
           string next_file_name = data_folder_path_ + "/LiDAR/Aeva" +"/"+ aeva_file_list_[current_file_index+1];
@@ -667,19 +706,19 @@ void ROSThread::ContinentalThread()
             //publish data
             if(to_string(data) + ".bin" == continental_next_.first){
                 //publish
-                continental_next_.second.header.stamp.fromNSec(data);
+                continental_next_.second.header.stamp = rclcpp::Time(data);
                 continental_next_.second.header.frame_id = "continental";
                 if(save_flag_ == true && process_flag_ == true){
                     std::lock_guard<std::mutex> lock(bag_mutex_);
-                    bag_.write("/continental/points", continental_next_.second.header.stamp, continental_next_.second);
+                    bag_.write(continental_next_.second, "/continental/points", rclcpp::Time(continental_next_.second.header.stamp));
                 }
-                continental_pub_.publish(continental_next_.second);
+                continental_pub_->publish(continental_next_.second);
 
             } else {
                 //load current data
                 pcl::PointCloud<pc_type_c> cloud;
                 cloud.clear();
-                sensor_msgs::PointCloud2 publish_cloud;
+                sensor_msgs::msg::PointCloud2 publish_cloud;
                 string current_file_name = data_folder_path_ + "/Radar/Continental" + "/" + to_string(data) + ".bin";
                 if(find(next(continental_file_list_.begin(), max(0, previous_file_index - search_bound_)), continental_file_list_.end(), to_string(data) + ".bin") != continental_file_list_.end()){
                     ifstream file;
@@ -699,9 +738,9 @@ void ROSThread::ContinentalThread()
                     file.close();
 
                     pcl::toROSMsg(cloud, publish_cloud);
-                    publish_cloud.header.stamp.fromNSec(data); 
+                    publish_cloud.header.stamp = rclcpp::Time(data); 
                     publish_cloud.header.frame_id = "continental";          
-                    continental_pub_.publish(publish_cloud);
+                    continental_pub_->publish(publish_cloud);
                 }
                 previous_file_index = 0;
             }
@@ -709,7 +748,7 @@ void ROSThread::ContinentalThread()
             //load next data
             pcl::PointCloud<pc_type_c> cloud;
             cloud.clear();
-            sensor_msgs::PointCloud2 publish_cloud;
+            sensor_msgs::msg::PointCloud2 publish_cloud;
             current_file_index = find(next(continental_file_list_.begin(), max(0, previous_file_index - search_bound_)), continental_file_list_.end(), to_string(data) + ".bin") - continental_file_list_.begin();
             if(find(next(continental_file_list_.begin(), max(0, previous_file_index - search_bound_)), continental_file_list_.end(), continental_file_list_[current_file_index + 1]) != continental_file_list_.end()){
                 string next_file_name = data_folder_path_ + "/Radar/Continental" + "/" + continental_file_list_[current_file_index + 1];
@@ -756,19 +795,19 @@ void ROSThread::ContinentalobjectThread()
             //publish data
             if(to_string(data) + ".bin" == continentalobject_next_.first){
                 //publish
-                continentalobject_next_.second.header.stamp.fromNSec(data);
+                continentalobject_next_.second.header.stamp = rclcpp::Time(data);
                 continentalobject_next_.second.header.frame_id = "continentalobject";
                 if(save_flag_ == true && process_flag_ == true){
                     std::lock_guard<std::mutex> lock(bag_mutex_);
-                    bag_.write("/continentalobject/points", continentalobject_next_.second.header.stamp, continentalobject_next_.second);
+                    bag_.write(continentalobject_next_.second, "/continentalobject/points", rclcpp::Time(continentalobject_next_.second.header.stamp));
                 }
-                continentalobject_pub_.publish(continentalobject_next_.second);
+                continentalobject_pub_->publish(continentalobject_next_.second);
 
             } else {
                 //load current data
                 pcl::PointCloud<pc_type_co> cloud;
                 cloud.clear();
-                sensor_msgs::PointCloud2 publish_cloud;
+                sensor_msgs::msg::PointCloud2 publish_cloud;
                 string current_file_name = data_folder_path_ + "/Radar/Continentalobject" + "/" + to_string(data) + ".bin";
                 if(find(next(continentalobject_file_list_.begin(), max(0, previous_file_index - search_bound_)), continentalobject_file_list_.end(), to_string(data) + ".bin") != continentalobject_file_list_.end()){
                     ifstream file;
@@ -785,9 +824,9 @@ void ROSThread::ContinentalobjectThread()
                     file.close();
 
                     pcl::toROSMsg(cloud, publish_cloud);
-                    publish_cloud.header.stamp.fromNSec(data); 
+                    publish_cloud.header.stamp = rclcpp::Time(data); 
                     publish_cloud.header.frame_id = "continentalobject";          
-                    continentalobject_pub_.publish(publish_cloud);
+                    continentalobject_pub_->publish(publish_cloud);
                 }
                 previous_file_index = 0;
             }
@@ -795,7 +834,7 @@ void ROSThread::ContinentalobjectThread()
             //load next data
             pcl::PointCloud<pc_type_co> cloud;
             cloud.clear();
-            sensor_msgs::PointCloud2 publish_cloud;
+            sensor_msgs::msg::PointCloud2 publish_cloud;
             current_file_index = find(next(continentalobject_file_list_.begin(), max(0, previous_file_index - search_bound_)), continentalobject_file_list_.end(), to_string(data) + ".bin") - continentalobject_file_list_.begin();
             if(find(next(continentalobject_file_list_.begin(), max(0, previous_file_index - search_bound_)), continentalobject_file_list_.end(), continentalobject_file_list_[current_file_index + 1]) != continentalobject_file_list_.end()){
                 string next_file_name = data_folder_path_ + "/Radar/Continentalobject" + "/" + continentalobject_file_list_[current_file_index + 1];
@@ -823,8 +862,7 @@ void ROSThread::ContinentalobjectThread()
 }
 
 
-void 
-ROSThread::RadarpolarThread()
+void ROSThread::RadarpolarThread()
 {
   int current_img_index = 0;
   int previous_img_index = 0;
@@ -846,11 +884,13 @@ ROSThread::RadarpolarThread()
       if( to_string(data)+".png" == radarpolar_next_.first && !radarpolar_next_.second.empty() )
       {
         cv_bridge::CvImage radarpolar_out_msg;
-        radarpolar_out_msg.header.stamp.fromNSec(data);
+        radarpolar_out_msg.header.stamp = rclcpp::Time(data);
         radarpolar_out_msg.header.frame_id = "navtech";
         radarpolar_out_msg.encoding = sensor_msgs::image_encodings::MONO8;
         radarpolar_out_msg.image    = radarpolar_next_.second;
-        radarpolar_pub_.publish(radarpolar_out_msg.toImageMsg());
+        auto img_msg = radarpolar_out_msg.toImageMsg();
+        bag_.write(*img_msg, "/radarpolar/image", rclcpp::Time(radarpolar_out_msg.header.stamp));
+        radarpolar_pub_->publish(*img_msg);
       }
       else
       {
@@ -862,11 +902,13 @@ ROSThread::RadarpolarThread()
         {
 
           cv_bridge::CvImage radarpolar_out_msg;
-          radarpolar_out_msg.header.stamp.fromNSec(data);
+          radarpolar_out_msg.header.stamp = rclcpp::Time(data);
           radarpolar_out_msg.header.frame_id = "navtech";
           radarpolar_out_msg.encoding = sensor_msgs::image_encodings::MONO8;
           radarpolar_out_msg.image    = radarpolar_image;
-          radarpolar_pub_.publish(radarpolar_out_msg.toImageMsg());
+          auto img_msg = radarpolar_out_msg.toImageMsg();
+          bag_.write(*img_msg, "/radarpolar/image", rclcpp::Time(radarpolar_out_msg.header.stamp));
+          radarpolar_pub_->publish(*img_msg);
 
         }
         previous_img_index = 0;
@@ -914,12 +956,14 @@ void ROSThread::StereoleftThread()
             // Publish
             if (to_string(data) + ".png" == stereo_left_next_img_.first && !stereo_left_next_img_.second.empty()) {
                 cv_bridge::CvImage left_out_msg;
-                left_out_msg.header.stamp.fromNSec(data);
+                left_out_msg.header.stamp = rclcpp::Time(data);
                 left_out_msg.header.frame_id = "stereo_left";
                 left_out_msg.encoding = sensor_msgs::image_encodings::BGR8; // Change to BGR8
                 left_out_msg.image = stereo_left_next_img_.second;
 
-                stereo_left_pub_.publish(left_out_msg.toImageMsg());
+                auto img_msg = left_out_msg.toImageMsg();
+                bag_.write(*img_msg, "/stereo/left/image_raw", rclcpp::Time(left_out_msg.header.stamp));
+                stereo_left_pub_->publish(*img_msg);
             } else {
                 // Load left stereo image
                 string current_stereo_left_name = data_folder_path_ + "/Image/stereo_left/" + to_string(data) + ".png";
@@ -927,12 +971,14 @@ void ROSThread::StereoleftThread()
 
                 if (!current_left_image.empty()) {
                     cv_bridge::CvImage left_out_msg;
-                    left_out_msg.header.stamp.fromNSec(data);
+                    left_out_msg.header.stamp = rclcpp::Time(data);
                     left_out_msg.header.frame_id = "stereo_left";
                     left_out_msg.encoding = sensor_msgs::image_encodings::BGR8; // Change to BGR8
                     left_out_msg.image = current_left_image;
 
-                    stereo_left_pub_.publish(left_out_msg.toImageMsg());
+                    auto img_msg = left_out_msg.toImageMsg();
+                    bag_.write(*img_msg, "/stereo/left/image_raw", rclcpp::Time(left_out_msg.header.stamp));
+                    stereo_left_pub_->publish(*img_msg);
                 }
                 previous_img_index = 0;
             }
@@ -972,12 +1018,14 @@ void ROSThread::StereorightThread()
             // Publish
             if (to_string(data) + ".png" == stereo_right_next_img_.first && !stereo_right_next_img_.second.empty()) {
                 cv_bridge::CvImage right_out_msg;
-                right_out_msg.header.stamp.fromNSec(data);
+                right_out_msg.header.stamp = rclcpp::Time(data);
                 right_out_msg.header.frame_id = "stereo_right";
                 right_out_msg.encoding = sensor_msgs::image_encodings::BGR8; // Change to BGR8
                 right_out_msg.image = stereo_right_next_img_.second;
 
-                stereo_right_pub_.publish(right_out_msg.toImageMsg());
+                auto img_msg = right_out_msg.toImageMsg();
+                bag_.write(*img_msg, "/stereo/right/image_raw", rclcpp::Time(right_out_msg.header.stamp));
+                stereo_right_pub_->publish(*img_msg);
             } else {
                 // Load right stereo image
                 string current_stereo_right_name = data_folder_path_ + "/Image/stereo_right/" + to_string(data) + ".png";
@@ -985,12 +1033,14 @@ void ROSThread::StereorightThread()
 
                 if (!current_right_image.empty()) {
                     cv_bridge::CvImage right_out_msg;
-                    right_out_msg.header.stamp.fromNSec(data);
+                    right_out_msg.header.stamp = rclcpp::Time(data);
                     right_out_msg.header.frame_id = "stereo_right";
                     right_out_msg.encoding = sensor_msgs::image_encodings::BGR8; // Change to BGR8
                     right_out_msg.image = current_right_image;
 
-                    stereo_right_pub_.publish(right_out_msg.toImageMsg());
+                    auto img_msg = right_out_msg.toImageMsg();
+                    bag_.write(*img_msg, "/stereo/right/image_raw", rclcpp::Time(right_out_msg.header.stamp));
+                    stereo_right_pub_->publish(*img_msg);
                 }
                 previous_img_index = 0;
             }
@@ -1036,7 +1086,7 @@ int ROSThread::GetDirList(string dir, vector<string> &files)
     return 0;
 }
 
-void ROSThread::FilePlayerStart(const std_msgs::BoolConstPtr& msg)
+void ROSThread::FilePlayerStart(const std_msgs::msg::Bool::SharedPtr msg)
 {
   if(auto_start_flag_ == true){
     cout << "File player auto start" << endl;
@@ -1046,7 +1096,7 @@ void ROSThread::FilePlayerStart(const std_msgs::BoolConstPtr& msg)
   }
 }
 
-void ROSThread::FilePlayerStop(const std_msgs::BoolConstPtr& msg)
+void ROSThread::FilePlayerStop(const std_msgs::msg::Bool::SharedPtr msg)
 {
   cout << "File player auto stop" << endl;
   play_flag_ = true;
