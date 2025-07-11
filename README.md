@@ -121,11 +121,11 @@ If your data directory is represented as follows, you are now ready to enjoy the
 │   └── 📂 Aeva/
 │       └── 📝 timestamp.bin
 │── 📂 Radar/
-│   │── 📂 continental/
+│   │── 📂 Continental/
 │   │   └── 📝 timestamp.bin
-│   │── 📂 continentalobject/
+│   │── 📂 Continentalobject/
 │   │   └── 📝 timestamp.bin
-│   └── 📂 cart/
+│   └── 📂 Navtech/
 │       └── 📝 timestamp.bin
 │── 📂 .../
 └── 📂 sensor_data/
