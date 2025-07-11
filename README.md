@@ -12,6 +12,7 @@
 - 2025/03/08 : PR_GT has been updated with a unified local coordinate system.
 - 2025/03/10 : Stereo Camera Data is uploaded.
 - 2025/05/30 : HeRCULES_Pointcloud_Toolbox is released [https://github.com/hanjun815/HeRCULES_Pointcloud_Toolbox](https://github.com/hanjun815/HeRCULES_Pointcloud_Toolbox).
+- 2025/07/11 : ROS2 fileplayer of the HeRCULES dataset is released.
   
 ## What is File player?
 This program is a file player for the complex urban data set. If a user installs the ROS using "Desktop-Full version", there is only one additional dependent package, except for the ROS default package. First, clone this package into the src folder of your desired ROS workspace.
