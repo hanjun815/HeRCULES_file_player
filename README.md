@@ -54,27 +54,6 @@ Here's a step-by-step guide:
 4. Use the 'Stop skip' button to skip intervals when the vehicle remains stationary. This feature enhances the user experience by focusing on significant data.
 5. The loop button ensures that the data resumes playback from the beginning once completed
 
-## License and Citation
-- When using the dataset or code, please cite our paper:
-```
-@INPROCEEDINGS { hjkim-2025-icra,
-    AUTHOR = { Hanjun Kim and Minwoo Jung and Chiyun Noh and Sangwoo Jung and Hyunho Song and Wooseong Yang and Hyesu Jang and Ayoung Kim },
-    TITLE = { HeRCULES: Heterogeneous Radar Dataset in Complex Urban Environment for Multi-session Radar SLAM },
-    BOOKTITLE = { Proceedings of the IEEE International Conference on Robotics and Automation (ICRA) },
-    YEAR = { 2025 },
-    MONTH = { May. },
-    ADDRESS = { Atlanta },
-}
-```
-
-## Radar Development Tools
-- Our Radar development tools are available via [Polar2X](https://github.com/hanjun815/Polar2X).
-
-## Contributors
-- Maintainer: Hanjun Kim (hanjun815@snu.ac.kr)
-- Jinyong Jeong: The original author
-- Minwoo Jung: made the player system compatible with LIO-SAM input (i.e., supports ring information of a lidar scan)
-
 ## 5. ROS2 Usage
 
 ### Prerequisites
@@ -154,3 +133,23 @@ If your data directory is represented as follows, you are now ready to enjoy the
 Enjoy it:) 
 
 
+## License and Citation
+- When using the dataset or code, please cite our paper:
+```
+@INPROCEEDINGS { hjkim-2025-icra,
+    AUTHOR = { Hanjun Kim and Minwoo Jung and Chiyun Noh and Sangwoo Jung and Hyunho Song and Wooseong Yang and Hyesu Jang and Ayoung Kim },
+    TITLE = { HeRCULES: Heterogeneous Radar Dataset in Complex Urban Environment for Multi-session Radar SLAM },
+    BOOKTITLE = { Proceedings of the IEEE International Conference on Robotics and Automation (ICRA) },
+    YEAR = { 2025 },
+    MONTH = { May. },
+    ADDRESS = { Atlanta },
+}
+```
+
+## Radar Development Tools
+- Our Radar development tools are available via [Polar2X](https://github.com/hanjun815/Polar2X).
+
+## Contributors
+- Maintainer: Hanjun Kim (hanjun815@snu.ac.kr)
+- Jinyong Jeong: The original author
+- Minwoo Jung: made the player system compatible with LIO-SAM input (i.e., supports ring information of a lidar scan)
