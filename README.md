@@ -114,7 +114,7 @@ $ ros2 launch hercules_file_player hercules_file_player.launch.py
 
 ### Prepare the data and timestamps
 
-If your data directory is represented as follows, you are now ready to enjoy the HeliPR dataset!
+If your data directory is represented as follows, you are now ready to enjoy the HeRCULES dataset!
 ```
 📂 Sequence_name/
 ├── 📂 LiDAR/
