@@ -69,7 +69,7 @@ Here's a step-by-step guide:
 ```
 $ mkdir -p ~/ros2_ws/src
 $ cd ~/ros2_ws/src
-$ git clone https://github.com/hanjun815/HeRCULES_file_player.git
+$ git clone --branch ros2 --single-branch --depth 1 https://github.com/hanjun815/HeRCULES_file_player.git
 $ cd ~/ros2_ws
 $ rosdep install --from-paths src --ignore-src -r -y
 $ colcon build --symlink-install
